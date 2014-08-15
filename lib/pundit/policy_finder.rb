@@ -1,32 +1,21 @@
 module Pundit
   class PolicyFinder
-    attr_reader :object, :namespace
+    attr_reader :object
 
-    def initialize(object, namespace = Object)
+    def initialize(object)
       @object = object
-      @namespace = namespace
-    end
-
-    def scope
-      policy::Scope if policy
-    rescue NameError
-      nil
     end
 
     def policy
       klass = find
-      klass = namespace.const_get(klass.demodulize) if klass.is_a?(String)
+      klass = klass.constantize if klass.is_a?(String)
       klass
     rescue NameError
       nil
     end
 
-    def scope!
-      scope or raise NotDefinedError, "unable to find scope #{find}::Scope for #{object}"
-    end
-
     def policy!
-      policy or raise NotDefinedError, "unable to find policy #{find} for #{object}"
+      policy or raise PolicyMissing, "unable to find policy #{find} for #{object}"
     end
 
   private

@@ -4,44 +4,10 @@ describe Pundit do
   let(:user) { double }
   let(:post) { Post.new(user) }
   let(:comment) { Comment.new }
-  let(:nested_comment) { Admin::Comment.new }
   let(:article) { Article.new }
   let(:controller) { Controller.new(user, { :action => 'update' }) }
   let(:artificial_blog) { ArtificialBlog.new }
   let(:article_tag) { ArticleTag.new }
-  let(:nested_controller) { Admin::Controller.new }
-
-  describe ".policy_scope" do
-    it "returns an instantiated policy scope given a plain model class" do
-      expect(Pundit.policy_scope(user, Post)).to eq :published
-    end
-
-    it "returns an instantiated policy scope given an active model class" do
-      expect(Pundit.policy_scope(user, Comment)).to eq Comment
-    end
-
-    it "returns nil if the given policy scope can't be found" do
-      expect(Pundit.policy_scope(user, Article)).to be_nil
-    end
-  end
-
-  describe ".policy_scope!" do
-    it "returns an instantiated policy scope given a plain model class" do
-      expect(Pundit.policy_scope!(user, Post)).to eq :published
-    end
-
-    it "returns an instantiated policy scope given an active model class" do
-      expect(Pundit.policy_scope!(user, Comment)).to eq Comment
-    end
-
-    it "throws an exception if the given policy scope can't be found" do
-      expect { Pundit.policy_scope!(user, Article) }.to raise_error(Pundit::NotDefinedError)
-    end
-
-    it "throws an exception if the given policy scope can't be found" do
-      expect { Pundit.policy_scope!(user, ArticleTag) }.to raise_error(Pundit::NotDefinedError)
-    end
-  end
 
   describe ".policy" do
     it "returns an instantiated policy given a plain model instance" do
@@ -140,30 +106,8 @@ describe Pundit do
     end
 
     it "throws an exception if the given policy can't be found" do
-      expect { Pundit.policy!(user, article) }.to raise_error(Pundit::NotDefinedError)
-      expect { Pundit.policy!(user, Article) }.to raise_error(Pundit::NotDefinedError)
-    end
-  end
-
-  describe "#verify_authorized" do
-    it "does nothing when authorized" do
-      controller.authorize(post)
-      controller.verify_authorized
-    end
-
-    it "raises an exception when not authorized" do
-      expect { controller.verify_authorized }.to raise_error(Pundit::AuthorizationNotPerformedError)
-    end
-  end
-
-  describe "#verify_policy_scoped" do
-    it "does nothing when policy_scope is used" do
-      controller.policy_scope(Post)
-      controller.verify_policy_scoped
-    end
-
-    it "raises an exception when policy_scope is not used" do
-      expect { controller.verify_policy_scoped }.to raise_error(Pundit::PolicyScopingNotPerformedError)
+      expect { Pundit.policy!(user, article) }.to raise_error(Pundit::PolicyMissing)
+      expect { Pundit.policy!(user, Article) }.to raise_error(Pundit::PolicyMissing)
     end
   end
 
@@ -174,16 +118,16 @@ describe Pundit do
 
     it "can be given a different permission to check" do
       expect(controller.authorize(post, :show?)).to be_truthy
-      expect { controller.authorize(post, :destroy?) }.to raise_error(Pundit::NotAuthorizedError)
+      expect { controller.authorize(post, :destroy?) }.to raise_error(Pundit::NotAuthorized)
     end
 
     it "works with anonymous class policies" do
       expect(controller.authorize(article_tag, :show?)).to be_truthy
-      expect { controller.authorize(article_tag, :destroy?) }.to raise_error(Pundit::NotAuthorizedError)
+      expect { controller.authorize(article_tag, :destroy?) }.to raise_error(Pundit::NotAuthorized)
     end
 
     it "raises an error when the permission check fails" do
-      expect { controller.authorize(Post.new) }.to raise_error(Pundit::NotAuthorizedError)
+      expect { controller.authorize(Post.new) }.to raise_error(Pundit::NotAuthorized)
     end
 
     it "raises an error with a query and action" do
@@ -209,16 +153,7 @@ describe Pundit do
     end
 
     it "throws an exception if the given policy can't be found" do
-      expect { controller.policy(article) }.to raise_error(Pundit::NotDefinedError)
-    end
-
-    it "looks up the policy class based on the caller's namespace" do
-      expect(nested_controller.policy(comment).class).to eq Admin::CommentPolicy
-      expect(nested_controller.policy(nested_comment).class).to eq Admin::CommentPolicy
-    end
-
-    it "falls back to the non-namespaced policy class if there isn't a namespaced one" do
-      expect(nested_controller.policy(post).class).to eq PostPolicy
+      expect { controller.policy(article) }.to raise_error(Pundit::PolicyMissing)
     end
 
     it "allows policy to be injected" do
@@ -226,23 +161,6 @@ describe Pundit do
       controller.policy = new_policy
 
       expect(controller.policy(post)).to eq new_policy
-    end
-  end
-
-  describe ".policy_scope" do
-    it "returns an instantiated policy scope" do
-      expect(controller.policy_scope(Post)).to eq :published
-    end
-
-    it "throws an exception if the given policy can't be found" do
-      expect { controller.policy_scope(Article) }.to raise_error(Pundit::NotDefinedError)
-    end
-
-    it "allows policy_scope to be injected" do
-      new_scope = OpenStruct.new
-      controller.policy_scope = new_scope
-
-      expect(controller.policy_scope(post)).to eq new_scope
     end
   end
 end
