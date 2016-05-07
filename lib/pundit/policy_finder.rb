@@ -12,8 +12,9 @@ module Pundit
 
     # @param object [any] the object to find policy and scope classes for
     #
-    def initialize(object)
+    def initialize(object, user=nil)
       @object = object
+      @user = user
     end
 
     # @return [nil, Scope{#resolve}] scope class which can resolve to a scope

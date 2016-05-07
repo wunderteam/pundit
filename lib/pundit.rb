@@ -76,7 +76,7 @@ module Pundit
     # @param scope [Object] the object we're retrieving the policy scope for
     # @return [Scope{#resolve}, nil] instance of scope class which can resolve to a scope
     def policy_scope(user, scope)
-      policy_scope = policy_finder.new(scope).scope
+      policy_scope = policy_finder.new(scope, user).scope
       policy_scope.new(user, scope).resolve if policy_scope
     end
 
@@ -88,7 +88,7 @@ module Pundit
     # @raise [NotDefinedError] if the policy scope cannot be found
     # @return [Scope{#resolve}] instance of scope class which can resolve to a scope
     def policy_scope!(user, scope)
-      policy_finder.new(scope).scope!.new(user, scope).resolve
+      policy_finder.new(scope, user).scope!.new(user, scope).resolve
     end
 
     # Retrieves the policy for the given record.
@@ -98,7 +98,7 @@ module Pundit
     # @param record [Object] the object we're retrieving the policy for
     # @return [Object, nil] instance of policy class with query methods
     def policy(user, record)
-      policy = policy_finder.new(record).policy
+      policy = policy_finder.new(record, user).policy
       policy.new(user, record) if policy
     end
 
@@ -110,7 +110,7 @@ module Pundit
     # @raise [NotDefinedError] if the policy cannot be found
     # @return [Object] instance of policy class with query methods
     def policy!(user, record)
-      policy_finder.new(record).policy!.new(user, record)
+      policy_finder.new(record, user).policy!.new(user, record)
     end
 
     # Class method allows for using a custom PolicyFinder
