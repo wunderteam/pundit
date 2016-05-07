@@ -76,7 +76,7 @@ module Pundit
     # @param scope [Object] the object we're retrieving the policy scope for
     # @return [Scope{#resolve}, nil] instance of scope class which can resolve to a scope
     def policy_scope(user, scope)
-      policy_scope = PolicyFinder.new(scope).scope
+      policy_scope = policy_finder.new(scope).scope
       policy_scope.new(user, scope).resolve if policy_scope
     end
 
@@ -88,7 +88,7 @@ module Pundit
     # @raise [NotDefinedError] if the policy scope cannot be found
     # @return [Scope{#resolve}] instance of scope class which can resolve to a scope
     def policy_scope!(user, scope)
-      PolicyFinder.new(scope).scope!.new(user, scope).resolve
+      policy_finder.new(scope).scope!.new(user, scope).resolve
     end
 
     # Retrieves the policy for the given record.
@@ -98,7 +98,7 @@ module Pundit
     # @param record [Object] the object we're retrieving the policy for
     # @return [Object, nil] instance of policy class with query methods
     def policy(user, record)
-      policy = PolicyFinder.new(record).policy
+      policy = policy_finder.new(record).policy
       policy.new(user, record) if policy
     end
 
@@ -110,7 +110,23 @@ module Pundit
     # @raise [NotDefinedError] if the policy cannot be found
     # @return [Object] instance of policy class with query methods
     def policy!(user, record)
-      PolicyFinder.new(record).policy!.new(user, record)
+      policy_finder.new(record).policy!.new(user, record)
+    end
+
+    # Class method allows for using a custom PolicyFinder
+    #
+    # TODO: @see https://github.com/elabs/pundit#
+    # @param klass [Class] the custom PolicyFinder class
+    # @return [Class] the PolicyFinder class to be used with pundit
+    def policy_finder=(klass)
+      @policy_finder = klass
+    end
+
+    # Retrieves the current policy finder
+    #
+    # @return [Class] the PolicyFinder class to be used with pundit
+    def policy_finder
+      @policy_finder ||= PolicyFinder
     end
   end
 
@@ -236,7 +252,7 @@ protected
   #   If omitted then this defaults to the Rails controller action name.
   # @return [Hash{String => Object}] the permitted attributes
   def permitted_attributes(record, action = params[:action])
-    param_key = PolicyFinder.new(record).param_key
+    param_key = Pundit.policy_finder.new(record).param_key
     policy = policy(record)
     method_name = if policy.respond_to?("permitted_attributes_for_#{action}")
       "permitted_attributes_for_#{action}"
